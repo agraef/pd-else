@@ -722,7 +722,7 @@ static void function_zoom(t_function *x, t_floatarg zoom){
     float mul = zoom == 1.0 ? 0.5 : 2.0;
     x->x_width = (int)((float)x->x_width * mul);
     x->x_height = (int)((float)x->x_height * mul);
-    x->x_zoom = (int)zoom;
+    x->x_zoom = __zoom((int)zoom);
     if(glist_isvisible(x->x_glist) && gobj_shouldvis((t_gobj *)x, x->x_glist))
         function_update(x, x->x_glist);
 }
@@ -791,7 +791,7 @@ static void *function_new(t_symbol *s, int ac, t_atom* av){
     buf[MAXPDSTRING-1] = 0;
     x->x_proxy = edit_proxy_new(x, gensym(buf));
     x->x_edit = cv->gl_edit;
-    x->x_zoom = x->x_glist->gl_zoom;
+    x->x_zoom = __zoom(x->x_glist->gl_zoom);
     x->x_points = getbytes((MAX_SIZE+1)*sizeof(float));
     x->x_dur = getbytes((MAX_SIZE+1)*sizeof(float));
     int envset = 0;

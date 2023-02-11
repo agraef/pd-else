@@ -547,7 +547,7 @@ static void edit_proxy_any(t_edit_proxy *p, t_symbol *s, int ac, t_atom *av){
 static void scope_zoom(t_scope *x, t_floatarg zoom){
     float mul = (zoom == 1. ? 0.5 : 2.);
     x->x_width*=mul, x->x_height*=mul;
-    x->x_zoom = (int)zoom;
+    x->x_zoom = __zoom((int)zoom);
 }
 
 // --------------------- handle ---------------------------------------------------
@@ -961,7 +961,7 @@ static void *scope_new(t_symbol *s, int ac, t_atom *av){
     sprintf(sh->h_outlinetag, "h%lx", (unsigned long)sh);
     x->x_glist = (t_glist*)canvas_getcurrent();
     x->x_cv = glist_getcanvas(x->x_glist);
-    x->x_zoom = x->x_glist->gl_zoom;
+    x->x_zoom = __zoom(x->x_glist->gl_zoom);
     char buf[MAXPDSTRING];
     snprintf(buf, MAXPDSTRING-1, ".x%lx", (unsigned long)x->x_cv);
     buf[MAXPDSTRING-1] = 0;

@@ -3,6 +3,8 @@
 #include "m_pd.h"
 #include "g_canvas.h"
 
+#include "compat.h"
+
 static t_class *zoom_class, *zoom_proxy_class;
 
 typedef struct _zoom_proxy{
@@ -20,12 +22,12 @@ typedef struct _zoom{
 }t_zoom;
 
 static void zoom_bang(t_zoom *x){
-    outlet_float(x->x_obj.ob_outlet, (x->x_zoom = x->x_canvas->gl_zoom) == 2);
+    outlet_float(x->x_obj.ob_outlet, (x->x_zoom = __zoom(x->x_canvas->gl_zoom)) == 2);
 }
 
 static void zoom_loadbang(t_zoom *x, t_float f){
     if((int)f == LB_LOAD)
-        outlet_float(x->x_obj.ob_outlet, (x->x_zoom = x->x_canvas->gl_zoom) == 2);
+        outlet_float(x->x_obj.ob_outlet, (x->x_zoom = __zoom(x->x_canvas->gl_zoom)) == 2);
 }
 
 static void zoom_proxy_any(t_zoom_proxy *p, t_symbol *s, int ac, t_atom *av){
@@ -34,7 +36,7 @@ static void zoom_proxy_any(t_zoom_proxy *p, t_symbol *s, int ac, t_atom *av){
         if(s == gensym("zoom")){
             int arg = (int)(av->a_w.w_float);
             if(p->p_cnv->x_zoom != arg)
-                outlet_float(p->p_cnv->x_obj.ob_outlet, (p->p_cnv->x_zoom = arg) == 2);
+                outlet_float(p->p_cnv->x_obj.ob_outlet, (p->p_cnv->x_zoom = __zoom(arg)) == 2);
         }
     }
 }

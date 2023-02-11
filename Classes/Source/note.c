@@ -1014,7 +1014,7 @@ static void note_just(t_note *x, t_float f){
 }
 
 static void note_zoom(t_note *x, t_floatarg zoom){
-    x->x_zoom = (int)zoom;
+    x->x_zoom = __zoom((int)zoom);
     note_redraw(x);
 }
 
@@ -1215,7 +1215,7 @@ static void *note_new(t_symbol *s, int ac, t_atom *av){
     t->te_type = T_TEXT;
     x->x_glist = canvas_getcurrent();
     x->x_cv = canvas_getcurrent();
-    x->x_zoom = x->x_glist->gl_zoom;
+    x->x_zoom = __zoom(x->x_glist->gl_zoom);
     x->x_fontname = gensym(default_font);
     x->x_edit = x->x_glist->gl_edit;
     x->x_buf = 0;

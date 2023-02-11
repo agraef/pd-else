@@ -408,7 +408,7 @@ static void numbox_dsp(t_numbox *x, t_signal **sp){
 }
 
 static void numbox_zoom(t_numbox *x, t_floatarg zoom){
-    x->x_zoom = (int)zoom;
+    x->x_zoom = __zoom((int)zoom);
 }
 
 static void numbox_free(t_numbox *x){
@@ -421,7 +421,7 @@ static void numbox_free(t_numbox *x){
 static void *numbox_new(t_symbol *sym, int ac, t_atom *av){
     t_numbox *x = (t_numbox *)pd_new(numbox_class);;
     x->x_glist = (t_glist *)canvas_getcurrent();
-    x->x_zoom = x->x_glist->gl_zoom;
+    x->x_zoom = __zoom(x->x_glist->gl_zoom);
     x->x_in_val = x->x_set_val = x->x_out_val = 0.0;
     x->x_buf[0] = 0; // ??
     x->x_clicked = 0, x->x_outmode = 1;

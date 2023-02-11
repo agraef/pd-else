@@ -427,7 +427,7 @@ static void edit_proxy_any(t_edit_proxy *p, t_symbol *s, int ac, t_atom *av){
 }
 
 static void pic_zoom(t_pic *x, t_floatarg zoom){
-    x->x_zoom = (int)zoom;
+    x->x_zoom = __zoom((int)zoom);
 }
 
 //------------------- Properties --------------------------------------------------------
@@ -498,7 +498,7 @@ static void *pic_new(t_symbol *s, int ac, t_atom *av){
     t_pic *x = (t_pic *)pd_new(pic_class);
     t_canvas *cv = canvas_getcurrent();
     x->x_glist = (t_glist*)cv;
-    x->x_zoom = x->x_glist->gl_zoom;
+    x->x_zoom = __zoom(x->x_glist->gl_zoom);
     char buf[MAXPDSTRING];
     snprintf(buf, MAXPDSTRING-1, ".x%lx", (unsigned long)cv);
     buf[MAXPDSTRING-1] = 0;

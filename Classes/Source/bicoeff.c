@@ -5,6 +5,8 @@
 #include "m_imp.h"
 #include "g_canvas.h"
 
+#include "compat.h"
+
 typedef struct bicoeff{
     t_object    x_obj;
     t_glist*    x_glist;      // glist that owns the widget
@@ -212,7 +214,7 @@ static void *bicoeff_new(t_symbol *s, int ac, t_atom* av){
     x->x_height = height;
     x->x_type = type;
     x->x_glist = (t_glist*)canvas_getcurrent();
-    x->x_zoom = x->x_glist->gl_zoom;
+    x->x_zoom = __zoom(x->x_glist->gl_zoom);
     snprintf(x->x_tag, MAXPDSTRING, "T%lx", (long unsigned int)x);
     snprintf(x->x_my, MAXPDSTRING, "::N%lx", (long unsigned int)x);
     char buf[MAXPDSTRING];
@@ -234,7 +236,7 @@ errstate:
 }
 
 static void bicoeff_zoom(t_bicoeff *x, t_floatarg zoom){
-    x->x_zoom = (int)zoom;
+    x->x_zoom = __zoom((int)zoom);
 }
 
 static void bicoeff_free(t_bicoeff *x){

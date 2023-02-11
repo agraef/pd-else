@@ -184,7 +184,7 @@ static void pad_color(t_pad *x, t_floatarg red, t_floatarg green, t_floatarg blu
 }
 
 static void pad_zoom(t_pad *x, t_floatarg zoom){
-    x->x_zoom = (int)zoom;
+    x->x_zoom = __zoom((int)zoom);
 }
 
 static void edit_proxy_any(t_edit_proxy *p, t_symbol *s, int ac, t_atom *av){
@@ -245,7 +245,7 @@ static void *pad_new(t_symbol *s, int ac, t_atom *av){
     sprintf(buf, "#%lx", (long)x);
     pd_bind(&x->x_obj.ob_pd, x->x_bindname = gensym(buf));
     x->x_edit = cv->gl_edit;
-    x->x_zoom = x->x_glist->gl_zoom;
+    x->x_zoom = __zoom(x->x_glist->gl_zoom);
     x->x_x = x->x_y = 0;
     x->x_color[0] = x->x_color[1] = x->x_color[2] = 255;
     int w = 127, h = 127;

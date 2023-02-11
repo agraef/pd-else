@@ -454,7 +454,7 @@ static void messbox_save(t_gobj *z, t_binbuf *b){
 }
 
 static void messbox_zoom(t_messbox *x, t_floatarg zoom){
-    x->x_zoom = (int)zoom;
+    x->x_zoom = __zoom((int)zoom);
 }
 
 static void messbox_free(t_messbox *x){
@@ -468,7 +468,7 @@ static void *messbox_new(t_symbol *s, int ac, t_atom *av){
     t_messbox *x = (t_messbox *)pd_new(messbox_class);
     char buf[MAXPDSTRING];
     x->x_glist = canvas_getcurrent();
-    x->x_zoom = x->x_glist->gl_zoom;
+    x->x_zoom = __zoom(x->x_glist->gl_zoom);
     x->x_dollzero = binbuf_realizedollsym(gensym("$0"), 0, 0, 0);
     if(!(x->x_proxy = (t_messbox_proxy *)pd_new(messbox_proxy_class)))
         return(0);

@@ -540,7 +540,7 @@ static void edit_proxy_any(t_edit_proxy *p, t_symbol *s, int ac, t_atom *av){
 }
 
 static void keyboard_zoom(t_keyboard *x, t_floatarg zoom){
-    x->x_zoom = (int)zoom;
+    x->x_zoom = __zoom((int)zoom);
 }
 
 // ------------------------ GUI Behaviour -----------------------------
@@ -684,7 +684,7 @@ void * keyboard_new(t_symbol *s, int ac, t_atom* av){
     sprintf(buf, "#%lx", (long)x);
     pd_bind(&x->x_obj.ob_pd, x->x_bindsym = gensym(buf));
     x->x_edit = cv->gl_edit;
-    x->x_zoom = x->x_glist->gl_zoom;
+    x->x_zoom = __zoom(x->x_glist->gl_zoom);
     x->x_last_note = -1;
     x->x_velocity = 0;
     x->x_send = x->x_snd_raw = x->x_receive = x->x_rcv_raw = &s_;

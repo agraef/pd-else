@@ -197,7 +197,7 @@ static void button_bgcolor(t_button *x, t_floatarg red, t_floatarg green, t_floa
 }
 
 static void button_zoom(t_button *x, t_floatarg zoom){
-    x->x_zoom = (int)zoom;
+    x->x_zoom = __zoom((int)zoom);
 }
 
 static void edit_proxy_any(t_edit_proxy *p, t_symbol *s, int ac, t_atom *av){
@@ -255,7 +255,7 @@ static void *button_new(t_symbol *s, int ac, t_atom *av){
     x->x_proxy = edit_proxy_new(x, gensym(buf));
     sprintf(buf, "#%lx", (long)x);
     pd_bind(&x->x_obj.ob_pd, x->x_bindname = gensym(buf));
-    x->x_edit = cv->gl_edit;    x->x_zoom = x->x_glist->gl_zoom;
+    x->x_edit = cv->gl_edit;    x->x_zoom = __zoom(x->x_glist->gl_zoom);
     x->x_x = x->x_y = 0;
     x->x_fgcolor[0] = 128;
     x->x_fgcolor[1] = 128;

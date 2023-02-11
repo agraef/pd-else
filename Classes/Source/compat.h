@@ -20,6 +20,10 @@
    features have been ported, we need to figure out what exactly is needed
    here, and implement it in terms of Purr Data's undo/redo system. */
 #define pd_undo_set_objectstate(canvas, x, s, undo_argc, undo_argv, redo_argc, redo_argv) /* no-op  */
+// zoom factor should always be 1 in Purr Data
+#define __zoom(x) 1
+#else
+#define __zoom(x) x
 #endif
 
 #endif
