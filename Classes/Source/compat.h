@@ -15,6 +15,13 @@
 #endif
 
 #ifdef PDL2ORK
+#ifdef no_legacy_warnings
+// option to silence legacy warnings by turning sys_gui/sys_vgui into no-ops
+#undef sys_vgui
+#undef sys_gui
+#define sys_vgui(...)
+#define sys_gui(s)
+#endif
 /* This call is needed for the gui parts, which haven't been ported to JS yet
    anyway, so we just make this a no-op for now. XXXFIXME: Once the gui
    features have been ported, we need to figure out what exactly is needed
