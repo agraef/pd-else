@@ -2,6 +2,8 @@
 
 #include "m_pd.h"
 
+#include "compat.h"
+
 // common mapping for every platform, from https://github.com/depp/keycode 
 #ifdef __APPLE__
 

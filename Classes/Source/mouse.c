@@ -4,6 +4,8 @@
 #include "g_canvas.h"
 #include <string.h>
 
+#include "compat.h"
+
 typedef struct _mouse_gui{
     t_pd       g_pd;
     t_symbol  *g_psgui;

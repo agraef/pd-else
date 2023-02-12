@@ -4,6 +4,8 @@
 #include "g_canvas.h"
 #include <string.h>
 
+#include "compat.h"
+
 static t_class *mouse_proxy_class, *active_gui_class, *active_class;
 
 typedef struct _mouse_proxy{

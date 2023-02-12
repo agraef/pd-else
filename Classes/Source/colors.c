@@ -6,6 +6,8 @@
 #include <string.h>
 #include <math.h>
 
+#include "compat.h"
+
 static t_class *colors_class;
 
 typedef struct _colors{

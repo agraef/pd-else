@@ -5,6 +5,8 @@
 #include "g_canvas.h"
 #include <string.h>
 
+#include "compat.h"
+
 typedef struct _openfile{
     t_object   x_ob;
     int        x_isboxed;
