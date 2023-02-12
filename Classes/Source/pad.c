@@ -45,11 +45,50 @@ static void pad_draw_io_let(t_pad *x){
     }
 }
 
+#ifdef PURR_DATA
+// needed to get access to the widget callbacks in struct _class:
+#include "m_imp.h"
+void else_pad_draw_new(t_pad *x)
+{
+    t_canvas *canvas=glist_getcanvas(x->x_glist);
+    t_class *c = pd_class((t_pd *)x);
+    int x1, y1, x2, y2;
+    char colorbuf[MAXPDSTRING];
+    // hex colorspec for the pad's background color
+    sprintf(colorbuf, "#%2.2x%2.2x%2.2x", x->x_color[0], x->x_color[1], x->x_color[2]);
+    // get the pad's rectangle
+    c->c_wb->w_getrectfn((t_gobj *)x, x->x_glist, &x1, &y1, &x2, &y2);
+    /* All gui objects start as a gobj, we use gui_gobj_new from pdgui.js to
+       create it. This function takes the canvas and the object pointer itself
+       as arguments, both become strings in the JS interface which are used to
+       find the canvas and the object in the DOM. NOTE: "else_pad" (the type
+       argument to gui_gobj_new) becomes the class of the gobj, so that it
+       can be themed using CSS if wanted. */
+    gui_vmess("gui_gobj_new", "xxsiiii", canvas, x,
+        "else_pad", x1, y1, glist_istoplevel(x->x_glist), 0);
+    /* Now draw the actual shape of the object. In this case it's just a
+       rectangle filled with the given background color which gets added to
+       the previously created gobj. NOTE: This needs a JS function in pdgui.js
+       which actually creates the shape for us (look for the ELSE section in
+       pdgui.js, gui_else_draw_pad can be found there). */
+    gui_vmess("gui_else_draw_pad", "xxsii",
+        canvas,
+        x,
+        colorbuf,
+        x2 - x1,
+        y2 - y1);
+}
+#endif
+
 static void pad_draw(t_pad *x, t_glist *glist){
+#ifdef PURR_DATA
+    else_pad_draw_new(x);
+#else
     int xpos = text_xpix(&x->x_obj, glist), ypos = text_ypix(&x->x_obj, glist);
     sys_vgui(".x%lx.c create rectangle %d %d %d %d -width %d -outline %s -fill #%2.2x%2.2x%2.2x -tags [list %lxBASE %lxALL]\n",
         glist_getcanvas(glist), xpos, ypos, xpos + x->x_w*x->x_zoom, ypos + x->x_h*x->x_zoom,
         x->x_zoom, x->x_sel ? "blue" : "black", x->x_color[0], x->x_color[1], x->x_color[2], x, x);
+#endif
     pad_draw_io_let(x);
 }
 
