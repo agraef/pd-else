@@ -183,17 +183,33 @@ static void pad_delete(t_gobj *z, t_glist *glist){
 static void pad_displace(t_gobj *z, t_glist *glist, int dx, int dy){
     t_pad *x = (t_pad *)z;
     x->x_obj.te_xpix += dx, x->x_obj.te_ypix += dy;
+    /* In Purr Data, all of this is taken care of automatically, we only need
+       to fix the cord lines afterwards. */
+#ifndef PURR_DATA
     sys_vgui(".x%lx.c move %lxALL %d %d\n", glist_getcanvas(glist), x, dx*x->x_zoom, dy*x->x_zoom);
+#endif
     canvas_fixlinesfor(glist, (t_text*)x);
 }
 
 static void pad_select(t_gobj *z, t_glist *glist, int sel){
     t_pad *x = (t_pad *)z;
     t_canvas *cv = glist_getcanvas(glist);
+#ifdef PURR_DATA
+    /* Using existing gui_gobj functions from our api here. These just add or
+       remove the "selected" class from the gobj. Rendering the rectangle
+       border in the right color is then taken care of by the browser engine,
+       using the active css style. So there are no hard-coded border colors as
+       in the tcl code. */
+    if((x->x_sel = sel))
+        gui_vmess("gui_gobj_select", "xx", cv, x);
+    else
+        gui_vmess("gui_gobj_deselect", "xx", cv, x);
+#else
     if((x->x_sel = sel))
         sys_vgui(".x%lx.c itemconfigure %lxBASE -outline blue\n", cv, x);
     else
         sys_vgui(".x%lx.c itemconfigure %lxBASE -outline black\n", cv, x);
+#endif
 }
 
 static void pad_getrect(t_gobj *z, t_glist *glist, int *xp1, int *yp1, int *xp2, int *yp2){
