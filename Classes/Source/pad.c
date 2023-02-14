@@ -30,24 +30,89 @@ typedef struct _pad{
     unsigned char   x_color[3];
 }t_pad;
 
+#ifdef PURR_DATA
+// This is needed to get access to the widget callbacks in struct _class.
+// In particular, we need w_getrectfn below.
+#include "m_imp.h"
+#endif
+
 static void pad_erase(t_pad* x, t_glist* glist){
+#ifdef PURR_DATA
+    t_canvas *canvas=glist_getcanvas(glist);
+    gui_vmess("gui_gobj_erase", "xx", canvas, x);
+#else
     sys_vgui(".x%lx.c delete %lxALL\n", glist_getcanvas(glist), x);
+#endif
 }
 
 static void pad_draw_io_let(t_pad *x){
     if(x->x_edit){
+#ifdef PURR_DATA
+        // pad shows its single inlet/outlet pair only in edit mode.
+        t_canvas *canvas=glist_getcanvas(x->x_glist);
+        /* This is needed to get access to the widget callbacks below.
+           Specifically, we use w_getrectfn which gives us the coordinates of
+           the object on the canvas. */
+        t_class *c = pd_class((t_pd *)x);
+        int x1,y1,x2,y2;
+        /* We also need a tag for the iolets which become their ids in the
+           DOM. If the object was a "text responder" (rtext), we'd go to some
+           lengths here, using glist_findrtext to determine the tag as follows
+           (code mostly pilfered from g_all_guis.c): */
+#if 0
+        // recorded here since we might need it for more complex objects later
+        t_object *ob = pd_checkobject(&((t_gobj*)x)->g_pd);
+        t_rtext *y = glist_findrtext(canvas, ob);
+        const char *tag = rtext_gettag(y);
+#endif
+        /* But this isn't an rtext, just a simple rectangle which responds to
+           mouse events, so we can just use a tag derived from the object's
+           pointer value here, mimicking what gui_vmess does when it passes a
+           pointer value. gui_gobj_draw_io automatically adds "i0" or "o0" to
+           the tag signifying an in- or outlet, as is done for the other
+           objects (atom, iemgui, etc.). */
+        char tagbuf[MAXPDSTRING];
+        sprintf(tagbuf, "x%lx", (t_uint)x);
+        c->c_wb->w_getrectfn((t_gobj *)x,canvas,&x1,&y1,&x2,&y2);
+        gui_vmess("gui_gobj_draw_io", "xxsiiiiiisiii", canvas,
+                  x, tagbuf,
+                  x1, y1, x1 + IOWIDTH, y1 + IHEIGHT, x1, y1, "i", 0,
+                  0, 0);
+        gui_vmess("gui_gobj_draw_io", "xxsiiiiiisiii", canvas,
+                  x, tagbuf,
+                  x1, y2 - IHEIGHT, x1 + IOWIDTH, y2, x1, y1, "o", 0,
+                  0, 0);
+#else
         t_canvas *cv = glist_getcanvas(x->x_glist);
         int xpos = text_xpix(&x->x_obj, x->x_glist), ypos = text_ypix(&x->x_obj, x->x_glist);
         sys_vgui(".x%lx.c create rectangle %d %d %d %d -fill black -tags [list %lx_io %lxALL]\n",
             cv, xpos, ypos, xpos+(IOWIDTH*x->x_zoom), ypos+(IHEIGHT*x->x_zoom), x, x);
         sys_vgui(".x%lx.c create rectangle %d %d %d %d -fill black -tags [list %lx_io %lxALL]\n",
             cv, xpos, ypos+x->x_h*x->x_zoom, xpos+IOWIDTH*x->x_zoom, ypos+x->x_h*x->x_zoom-IHEIGHT*x->x_zoom, x, x);
+#endif
     }
 }
 
+static void pad_erase_io_let(t_pad *x){
 #ifdef PURR_DATA
-// needed to get access to the widget callbacks in struct _class:
-#include "m_imp.h"
+    t_canvas *canvas=glist_getcanvas(x->x_glist);
+    char tagbuf[MAXPDSTRING];
+    /* This gets rid of the iolet rectangles again. No automatic adding of i0
+       or o0 here, we have to add those ourselves. XXXTODO: This should be
+       simpler. Maybe just give the id of the parent node and have the JS
+       function find all children ending in i%d / o%d and delete them all in
+       one go. */
+    sprintf(tagbuf, "x%lxi0", (t_uint)x);
+    gui_vmess("gui_gobj_erase_io", "xs", canvas, tagbuf);
+    sprintf(tagbuf, "x%lxo0", (t_uint)x);
+    gui_vmess("gui_gobj_erase_io", "xs", canvas, tagbuf);
+#else
+    t_canvas *cv = glist_getcanvas(x->x_glist);
+    sys_vgui(".x%lx.c delete %lx_io\n", cv, x);
+#endif
+}
+
+#ifdef PURR_DATA
 void else_pad_draw_new(t_pad *x)
 {
     t_canvas *canvas=glist_getcanvas(x->x_glist);
@@ -245,8 +310,7 @@ static void edit_proxy_any(t_edit_proxy *p, t_symbol *s, int ac, t_atom *av){
             if(edit)
                 pad_draw_io_let(p->p_cnv);
             else{
-                t_canvas *cv = glist_getcanvas(p->p_cnv->x_glist);
-                sys_vgui(".x%lx.c delete %lx_io\n", cv, p->p_cnv);
+                pad_erase_io_let(p->p_cnv);
             }
         }
     }
@@ -278,7 +342,7 @@ static void *pad_new(t_symbol *s, int ac, t_atom *av){
     t_canvas *cv = canvas_getcurrent();
     x->x_glist = (t_glist*)cv;
     char buf[MAXPDSTRING];
-    snprintf(buf, MAXPDSTRING-1, ".x%lx", (unsigned long)cv);
+    snprintf(buf, MAXPDSTRING-1, __cvfs, (unsigned long)cv);
     buf[MAXPDSTRING-1] = 0;
     x->x_proxy = edit_proxy_new(x, gensym(buf));
     sprintf(buf, "#%lx", (long)x);
