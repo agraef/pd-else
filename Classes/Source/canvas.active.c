@@ -189,7 +189,7 @@ static void *active_new(t_symbol *s, int ac, t_atom *av){
     while(depth-- && cnv->gl_owner)
         cnv = cnv->gl_owner;
     char buf[MAXPDSTRING];
-    snprintf(buf, MAXPDSTRING-1, ".x%lx", (unsigned long)cnv);
+    snprintf(buf, MAXPDSTRING-1, __cvfs, (unsigned long)cnv);
     buf[MAXPDSTRING-1] = 0;
     x->x_proxy = mouse_proxy_new(x, gensym(buf));
     snprintf(buf, MAXPDSTRING-1, ".x%lx.c", (unsigned long)cnv);

@@ -27,9 +27,14 @@
    features have been ported, we need to figure out what exactly is needed
    here, and implement it in terms of Purr Data's undo/redo system. */
 #define pd_undo_set_objectstate(canvas, x, s, undo_argc, undo_argv, redo_argc, redo_argv) /* no-op  */
+/* Some minor purr-data vanilla incompatibilities which can't be fixed easily
+   upstream, so we abstract them away with some macros. */
+// canvas ids have a leading '.' in the tcl gui, but not in nw.js
+#define __cvfs "x%lx"
 // zoom factor should always be 1 in Purr Data
 #define __zoom(x) 1
 #else
+#define __cvfs ".x%lx"
 #define __zoom(x) x
 #endif
 

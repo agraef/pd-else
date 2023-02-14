@@ -500,7 +500,7 @@ static void *pic_new(t_symbol *s, int ac, t_atom *av){
     x->x_glist = (t_glist*)cv;
     x->x_zoom = __zoom(x->x_glist->gl_zoom);
     char buf[MAXPDSTRING];
-    snprintf(buf, MAXPDSTRING-1, ".x%lx", (unsigned long)cv);
+    snprintf(buf, MAXPDSTRING-1, __cvfs, (unsigned long)cv);
     buf[MAXPDSTRING-1] = 0;
     x->x_proxy = edit_proxy_new(x, gensym(buf));
     sprintf(buf, "#%lx", (long)x);

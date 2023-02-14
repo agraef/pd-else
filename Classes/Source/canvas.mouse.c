@@ -3,6 +3,8 @@
 #include "m_pd.h"
 #include "g_canvas.h"
 
+#include "compat.h"
+
 static t_class *canvas_mouse_class, *canvas_mouse_proxy_class;
 
 typedef struct _canvas_mouse_proxy{
@@ -98,7 +100,7 @@ static void *canvas_mouse_new(t_floatarg f1, t_floatarg f2){
         x->x_canvas = cv, cv = cv->gl_owner;
     x->x_edit = x->x_canvas->gl_edit;
     char buf[MAXPDSTRING];
-    snprintf(buf, MAXPDSTRING-1, ".x%lx", (unsigned long)cv);
+    snprintf(buf, MAXPDSTRING-1, __cvfs, (unsigned long)cv);
     buf[MAXPDSTRING-1] = 0;
     x->x_proxy = canvas_mouse_proxy_new(x, gensym(buf));
     outlet_new(&x->x_obj, 0);

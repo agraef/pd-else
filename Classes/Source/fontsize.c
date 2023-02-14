@@ -3,6 +3,8 @@
 #include "m_pd.h"
 #include "g_canvas.h"
 
+#include "compat.h"
+
 static t_class *fontsize_class, *fontsize_proxy_class;
 
 typedef struct _fontsize_proxy{
@@ -59,7 +61,7 @@ static void *fontsize_new(t_floatarg f1){
     while(depth-- && x->x_cv->gl_owner)
         x->x_cv = canvas_getrootfor(x->x_cv->gl_owner);
     char buf[MAXPDSTRING];
-    snprintf(buf, MAXPDSTRING-1, ".x%lx", (unsigned long)x->x_cv);
+    snprintf(buf, MAXPDSTRING-1, __cvfs, (unsigned long)x->x_cv);
     buf[MAXPDSTRING-1] = 0;
     x->x_proxy = fontsize_proxy_new(x, gensym(buf));
     outlet_new(&x->x_obj, 0);

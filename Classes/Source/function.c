@@ -787,7 +787,7 @@ static void *function_new(t_symbol *s, int ac, t_atom* av){
     t_canvas *cv = canvas_getcurrent();
     x->x_glist = (t_glist*)cv;
     char buf[MAXPDSTRING];
-    snprintf(buf, MAXPDSTRING-1, ".x%lx", (unsigned long)cv);
+    snprintf(buf, MAXPDSTRING-1, __cvfs, (unsigned long)cv);
     buf[MAXPDSTRING-1] = 0;
     x->x_proxy = edit_proxy_new(x, gensym(buf));
     x->x_edit = cv->gl_edit;

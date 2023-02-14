@@ -1235,7 +1235,7 @@ static void *note_new(t_symbol *s, int ac, t_atom *av){
     x->x_bbset = x->x_select = x->x_dragon = x->x_shift = 0;
     t_symbol *rcv = x->x_receive = x->x_rcv_raw = &s_;
     char buf[MAXPDSTRING];
-    snprintf(buf, MAXPDSTRING-1, ".x%lx", (unsigned long)x->x_cv);
+    snprintf(buf, MAXPDSTRING-1, __cvfs, (unsigned long)x->x_cv);
     buf[MAXPDSTRING-1] = 0;
     x->x_proxy = edit_proxy_new(x, gensym(buf));
     sprintf(buf, "#%lx", (long)x);

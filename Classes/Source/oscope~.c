@@ -963,7 +963,7 @@ static void *scope_new(t_symbol *s, int ac, t_atom *av){
     x->x_cv = glist_getcanvas(x->x_glist);
     x->x_zoom = __zoom(x->x_glist->gl_zoom);
     char buf[MAXPDSTRING];
-    snprintf(buf, MAXPDSTRING-1, ".x%lx", (unsigned long)x->x_cv);
+    snprintf(buf, MAXPDSTRING-1, __cvfs, (unsigned long)x->x_cv);
     buf[MAXPDSTRING-1] = 0;
     x->x_proxy = edit_proxy_new(x, gensym(buf));
     sprintf(buf, "#%lx", (long)x);

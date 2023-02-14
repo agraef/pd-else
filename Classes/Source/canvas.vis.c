@@ -3,6 +3,8 @@
 #include "m_pd.h"
 #include "g_canvas.h"
 
+#include "compat.h"
+
 static t_class *canvas_vis_class, *canvas_vis_proxy_class;
 
 typedef struct _canvas_vis_proxy{
@@ -56,7 +58,7 @@ static void *canvas_vis_new(t_floatarg f1){
     while(depth-- && x->x_canvas->gl_owner)
         x->x_canvas = x->x_canvas->gl_owner;
     char buf[MAXPDSTRING];
-    snprintf(buf, MAXPDSTRING-1, ".x%lx", (unsigned long)x->x_canvas);
+    snprintf(buf, MAXPDSTRING-1, __cvfs, (unsigned long)x->x_canvas);
     buf[MAXPDSTRING-1] = 0;
     x->x_proxy = canvas_vis_proxy_new(x, gensym(buf));
     outlet_new(&x->x_obj, 0);
