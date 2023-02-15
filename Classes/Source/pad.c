@@ -180,8 +180,11 @@ static void pad_update(t_pad *x){
 #ifdef PURR_DATA
         pad_config(x);
 #else
-        pad_erase(x, x->x_glist);
-        pad_draw(x, x->x_glist);
+        int xpos = text_xpix(&x->x_obj, x->x_glist);
+        int ypos = text_ypix(&x->x_obj, x->x_glist);
+        sys_vgui(".x%lx.c coords %lxBASE %d %d %d %d\n",
+                 glist_getcanvas(x->x_glist), x, xpos, ypos,
+                 xpos + x->x_w*x->x_zoom, ypos + x->x_h*x->x_zoom);
 #endif
         canvas_fixlinesfor(glist_getcanvas(x->x_glist), (t_text*)x);
     }
