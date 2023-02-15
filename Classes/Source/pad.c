@@ -20,6 +20,11 @@ typedef struct _pad{
     t_glist        *x_glist;
     t_edit_proxy   *x_proxy;
     t_symbol       *x_bindname;
+#ifdef PURR_DATA
+    t_symbol       *x_mouseclick;
+    int             x_mousestate, x_mousebind;
+    int             x_mousex, x_mousey;
+#endif
     int             x_x;
     int             x_y;
     int             x_w;
@@ -40,6 +45,10 @@ static void pad_erase(t_pad* x, t_glist* glist){
 #ifdef PURR_DATA
     t_canvas *canvas=glist_getcanvas(glist);
     gui_vmess("gui_gobj_erase", "xx", canvas, x);
+    if (x->x_mousebind) {
+      pd_unbind(&x->x_proxy->p_obj.ob_pd, x->x_mouseclick);
+      x->x_mousebind = 0;
+    }
 #else
     sys_vgui(".x%lx.c delete %lxALL\n", glist_getcanvas(glist), x);
 #endif
@@ -165,12 +174,64 @@ static void pad_update(t_pad *x){
     }
 }
 
+#ifdef PURR_DATA
+static void pad_mouserelease(t_pad* x);
+static void pad_mouseclick(t_edit_proxy *p, t_symbol *s, int argc,
+			   t_atom *argv)
+{
+  t_pad *x = p->p_cnv;
+  // 1st arg is the button state (0 = up, 1 = down)
+  int state = (int)atom_getfloatarg(0, argc, argv);
+  // 2nd arg is the button number
+  int b = (int)atom_getfloatarg(1, argc, argv);
+  // 3rd and 4th arg are the canvas coordinates
+  int xpos = (int)atom_getfloatarg(2, argc, argv);
+  int ypos = (int)atom_getfloatarg(3, argc, argv);
+  // We shouldn't actually see the same mouse state being reported twice here,
+  // but if we do, we bail out here.
+  if (state == x->x_mousestate) return;
+  x->x_mousestate = state;
+  /* We only report mouseup events, and no right-clicks, which is what the
+     Tcl/Tk version does. We also need to keep track of drag actions since in
+     this case the mouseup will be reported *anywhere* on the canvas as long
+     as the initial mousedown happened inside the pad rectangle. */
+  if (b<3) {
+    if (state) {
+      x->x_mousex = xpos; x->x_mousey = ypos;
+    } else {
+      t_class *c = pd_class((t_pd *)x);
+      t_canvas *canvas=glist_getcanvas(x->x_glist);
+      int x1,y1,x2,y2;
+      c->c_wb->w_getrectfn((t_gobj *)x,canvas,&x1,&y1,&x2,&y2);
+      if (x->x_mousex >= x1 && x->x_mousey >= y1 && x->x_mousex <= x2 && x->x_mousey <= y2) {
+	//post("mouseup at %d %d (was %d %d), rect: %d %d %d %d", xpos, ypos, x->x_mousex, x->x_mousey, x1,y1,x2,y2);
+	pad_mouserelease(x);
+      }
+    }
+  }
+}
+#endif
+
 static void pad_vis(t_gobj *z, t_glist *glist, int vis){
     t_pad* x = (t_pad*)z;
     t_canvas *cv = glist_getcanvas(glist);
     if(vis){
         pad_draw(x, glist);
+#ifdef PURR_DATA
+	/* We hook into Purr Data's legacy mouse interface here so that we can
+	   get notified about mouse clicks (mouseup events, in particular,
+	   which the engine doesn't pass on). NOTE: The receiver that we bind
+	   these messages to is the proxy, not the main object, in order not
+	   to interfere with the object's own message processing. The proxy in
+	   turn processes the list messages from the interface in the
+	   pad_mouseclick method above. */
+	if (!x->x_mousebind) {
+	  pd_bind(&x->x_proxy->p_obj.ob_pd, x->x_mouseclick);
+	  x->x_mousebind = 1;
+	}
+#else
         sys_vgui(".x%lx.c bind %lxBASE <ButtonRelease> {pdsend [concat %s _mouserelease \\;]}\n", cv, x, x->x_bindname->s_name);
+#endif
     }
     else
         pad_erase(x, glist);
@@ -371,6 +432,12 @@ static void *pad_new(t_symbol *s, int ac, t_atom *av){
     x->x_proxy = edit_proxy_new(x, gensym(buf));
     sprintf(buf, "#%lx", (long)x);
     pd_bind(&x->x_obj.ob_pd, x->x_bindname = gensym(buf));
+#ifdef PURR_DATA
+    // symbol to bind to receive legacy mouse messages
+    x->x_mouseclick = gensym("#legacy_mouseclick");
+    x->x_mousestate = x->x_mousex = x->x_mousey = -1;
+    x->x_mousebind = 0;
+#endif
     x->x_edit = cv->gl_edit;
     x->x_zoom = __zoom(x->x_glist->gl_zoom);
     x->x_x = x->x_y = 0;
@@ -443,6 +510,10 @@ void pad_setup(void){
     class_addmethod(pad_class, (t_method)pad_zoom, gensym("zoom"), A_CANT, 0);
     class_addmethod(pad_class, (t_method)pad_mouserelease, gensym("_mouserelease"), 0);
     edit_proxy_class = class_new(0, 0, 0, sizeof(t_edit_proxy), CLASS_NOINLET | CLASS_PD, 0);
+#ifdef PURR_DATA
+    // catch list messages delivered by the legacy mouse interface
+    class_addlist(edit_proxy_class, pad_mouseclick);
+#endif
     class_addanything(edit_proxy_class, edit_proxy_any);
     pad_widgetbehavior.w_getrectfn  = pad_getrect;
     pad_widgetbehavior.w_displacefn = pad_displace;
