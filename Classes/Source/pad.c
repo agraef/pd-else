@@ -166,10 +166,23 @@ static void pad_draw(t_pad *x, t_glist *glist){
     pad_draw_io_let(x);
 }
 
+#ifdef PURR_DATA
+static void pad_config(t_pad *x)
+{
+  char colorbuf[MAXPDSTRING];
+  sprintf(colorbuf, "#%2.2x%2.2x%2.2x", x->x_color[0], x->x_color[1], x->x_color[2]);
+  gui_vmess("gui_else_configure_pad", "xxsii", glist_getcanvas(x->x_glist), x, colorbuf, x->x_w, x->x_h);
+}
+#endif
+
 static void pad_update(t_pad *x){
     if(glist_isvisible(x->x_glist) && gobj_shouldvis((t_gobj *)x, x->x_glist)){
+#ifdef PURR_DATA
+        pad_config(x);
+#else
         pad_erase(x, x->x_glist);
         pad_draw(x, x->x_glist);
+#endif
         canvas_fixlinesfor(glist_getcanvas(x->x_glist), (t_text*)x);
     }
 }
@@ -360,11 +373,7 @@ static void pad_color(t_pad *x, t_floatarg red, t_floatarg green, t_floatarg blu
         x->x_color[0] = r; x->x_color[1] = g; x->x_color[2] = b;
         if(glist_isvisible(x->x_glist) && gobj_shouldvis((t_gobj *)x, x->x_glist))
 #ifdef PURR_DATA
-        {
-            char colorbuf[MAXPDSTRING];
-            sprintf(colorbuf, "#%2.2x%2.2x%2.2x", r, g, b);
-            gui_vmess("gui_else_configure_pad", "xxs", glist_getcanvas(x->x_glist), x, colorbuf);
-        }
+            pad_config(x);
 #else
             sys_vgui(".x%lx.c itemconfigure %lxBASE -fill #%2.2x%2.2x%2.2x\n",
             glist_getcanvas(x->x_glist), x, r, g, b);
