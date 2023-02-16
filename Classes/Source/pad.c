@@ -388,6 +388,21 @@ static void pad_zoom(t_pad *x, t_floatarg zoom){
     x->x_zoom = __zoom((int)zoom);
 }
 
+#ifdef PURR_DATA
+static void edit_proxy_float(t_edit_proxy *p, t_float f)
+{
+    int edit = f;
+    if(p->p_cnv->x_edit != edit){
+      p->p_cnv->x_edit = edit;
+      if(edit)
+	pad_draw_io_let(p->p_cnv);
+      else{
+	pad_erase_io_let(p->p_cnv);
+      }
+    }
+}
+#endif
+
 static void edit_proxy_any(t_edit_proxy *p, t_symbol *s, int ac, t_atom *av){
     int edit = ac = 0;
     if(p->p_cnv){
@@ -439,17 +454,21 @@ static void *pad_new(t_symbol *s, int ac, t_atom *av){
     t_canvas *cv = canvas_getcurrent();
     x->x_glist = (t_glist*)cv;
     char buf[MAXPDSTRING];
-    snprintf(buf, MAXPDSTRING-1, __cvfs, (unsigned long)cv);
+#ifdef PURR_DATA
+    snprintf(buf, MAXPDSTRING-1, __cvfs "#editmode", (unsigned long)cv);
     buf[MAXPDSTRING-1] = 0;
     x->x_proxy = edit_proxy_new(x, gensym(buf));
-    sprintf(buf, "#%lx", (long)x);
-    pd_bind(&x->x_obj.ob_pd, x->x_bindname = gensym(buf));
-#ifdef PURR_DATA
     // symbol to bind to receive legacy mouse messages
     x->x_mouseclick = gensym("#legacy_mouseclick");
     x->x_mousestate = x->x_mousex = x->x_mousey = -1;
     x->x_mousebind = 0;
+#else
+    snprintf(buf, MAXPDSTRING-1, __cvfs, (unsigned long)cv);
+    buf[MAXPDSTRING-1] = 0;
+    x->x_proxy = edit_proxy_new(x, gensym(buf));
 #endif
+    sprintf(buf, "#%lx", (long)x);
+    pd_bind(&x->x_obj.ob_pd, x->x_bindname = gensym(buf));
     x->x_edit = cv->gl_edit;
     x->x_zoom = __zoom(x->x_glist->gl_zoom);
     x->x_x = x->x_y = 0;
@@ -525,8 +544,11 @@ void pad_setup(void){
 #ifdef PURR_DATA
     // catch list messages delivered by the legacy mouse interface
     class_addlist(edit_proxy_class, pad_mouseclick);
-#endif
+    // catch edit mode state message delivered to the #editmode receiver
+    class_addfloat(edit_proxy_class, edit_proxy_float);
+#else
     class_addanything(edit_proxy_class, edit_proxy_any);
+#endif
     pad_widgetbehavior.w_getrectfn  = pad_getrect;
     pad_widgetbehavior.w_displacefn = pad_displace;
     pad_widgetbehavior.w_selectfn   = pad_select;
