@@ -192,6 +192,74 @@ static void pad_update(t_pad *x){
 
 #ifdef PURR_DATA
 static void pad_mouserelease(t_pad* x);
+
+/* We hook into Purr Data's legacy mouse interface here so that we can get
+   notified about mouse clicks (mouseup events, in particular, which the
+   engine doesn't pass on). NOTE: The receiver that we bind these messages to
+   is the proxy, not the main object, in order not to interfere with the
+   object's own message processing. The proxy in turn processes the list
+   messages from the interface in the pad_mouseclick method below.
+
+   We really have to stretch Purr Data's poor old #legacy_mouseclick interface
+   here to make it do things it was never designed to do. The interface is
+   provided as a simple way to track the mouse on a toplevel canvas, nothing
+   more. Thus in order to make this stuff work in the same way as in the
+   vanilla/tcl version, we need to:
+
+   (1) Keep track of drag actions (and thus of both mousedown and mouseup
+   events, although we only report the latter). ELSE's pad reports a mouseup
+   event anywhere on the canvas, as long as the click was initiated inside its
+   rectangle.
+
+   (2) If needed, translate the coordinates so that they are relative to pad
+   objects in gop subpatches. This is necessary because #legacy_mouseclick
+   only delivers coordinates relative to the toplevel canvas, and we need the
+   coordinates relative to the target pad object in a gop subpatch to match
+   the mousedown event against the click rectangle in order to make (1) work
+   correctly.
+
+   It really seems that we go to quite some lengths here in order to properly
+   report a simple mouseup event, but there you go.
+
+   One issue still remains due to #legacy_mouseclick not allowing us to filter
+   events by canvas. You will notice this if you have pad objects in separate
+   toplevel patches, in which case a single mouseup event may be reported by
+   multiple objects in different patches if their rectangles happen to match
+   up. This is a known bug which simply can't be avoided in the current
+   implementation. */
+
+// calculate click coords relative to a (sub)canvas
+static void gop_translate_coords(t_pad *x, int *xp, int *yp)
+{
+  int xpos = *xp, ypos = *yp;
+  // we are here:
+  t_glist *gl = x->x_glist;
+  // this is the toplevel canvas which xpos, ypos refer to:
+  t_canvas *tl = glist_getcanvas(gl);
+  //post("%p: xpos, ypos = %d %d", gl, xpos, ypos);
+  while (gl != tl) {
+    t_glist *owner = gl->gl_owner; // our parent, assert != NULL
+    int isgop = gl->gl_isgraph; // gop?
+    // if not a gop, then the click isn't for us, bail out
+    if (!isgop) {
+      xpos = ypos = -1;
+      break;
+    }
+    // determine the position of the gop canvas in its parent
+    int xp = text_xpix(&gl->gl_obj, owner);
+    int yp = text_ypix(&gl->gl_obj, owner);
+    // gop area
+    int gop_x = gl->gl_xmargin;
+    int gop_y = gl->gl_ymargin;
+    // true position is offset by the gop offset minus xp, yp
+    xpos += gop_x-xp; ypos += gop_y-yp;
+    //post("%p (%d %d): gop = %d (%d %d) => xpos, ypos = %d %d", gl, xp, yp, isgop, gop_x, gop_y, xpos, ypos);
+    // walk up the tree
+    gl = owner;
+  }
+  *xp = xpos; *yp = ypos;
+}
+
 static void pad_mouseclick(t_edit_proxy *p, t_symbol *s, int argc,
 			   t_atom *argv)
 {
@@ -200,7 +268,7 @@ static void pad_mouseclick(t_edit_proxy *p, t_symbol *s, int argc,
   int state = (int)atom_getfloatarg(0, argc, argv);
   // 2nd arg is the button number
   int b = (int)atom_getfloatarg(1, argc, argv);
-  // 3rd and 4th arg are the canvas coordinates
+  // 3rd and 4th arg are the (toplevel) canvas coordinates
   int xpos = (int)atom_getfloatarg(2, argc, argv);
   int ypos = (int)atom_getfloatarg(3, argc, argv);
   // We shouldn't actually see the same mouse state being reported twice here,
@@ -213,14 +281,16 @@ static void pad_mouseclick(t_edit_proxy *p, t_symbol *s, int argc,
      as the initial mousedown happened inside the pad rectangle. */
   if (b<3) {
     if (state) {
+      gop_translate_coords(x, &xpos, &ypos);
       x->x_mousex = xpos; x->x_mousey = ypos;
     } else {
       t_class *c = pd_class((t_pd *)x);
       t_canvas *canvas=glist_getcanvas(x->x_glist);
       int x1,y1,x2,y2;
       c->c_wb->w_getrectfn((t_gobj *)x,canvas,&x1,&y1,&x2,&y2);
+      //gop_translate_coords(x, &xpos, &ypos);
+      //post("mouseup at %d %d (was %d %d), rect: %d %d %d %d, match: %d", xpos, ypos, x->x_mousex, x->x_mousey, x1,y1,x2,y2, x->x_mousex >= x1 && x->x_mousey >= y1 && x->x_mousex <= x2 && x->x_mousey <= y2);
       if (x->x_mousex >= x1 && x->x_mousey >= y1 && x->x_mousex <= x2 && x->x_mousey <= y2) {
-	//post("mouseup at %d %d (was %d %d), rect: %d %d %d %d", xpos, ypos, x->x_mousex, x->x_mousey, x1,y1,x2,y2);
 	pad_mouserelease(x);
       }
     }
@@ -234,13 +304,7 @@ static void pad_vis(t_gobj *z, t_glist *glist, int vis){
     if(vis){
         pad_draw(x, glist);
 #ifdef PURR_DATA
-	/* We hook into Purr Data's legacy mouse interface here so that we can
-	   get notified about mouse clicks (mouseup events, in particular,
-	   which the engine doesn't pass on). NOTE: The receiver that we bind
-	   these messages to is the proxy, not the main object, in order not
-	   to interfere with the object's own message processing. The proxy in
-	   turn processes the list messages from the interface in the
-	   pad_mouseclick method above. */
+	// bind to #legacy_mouseclick
 	if (!x->x_mousebind) {
 	  pd_bind(&x->x_proxy->p_obj.ob_pd, x->x_mouseclick);
 	  x->x_mousebind = 1;
